@@ -1,0 +1,264 @@
+import dash
+from dash import dcc, html, dash_table
+import pandas as pd
+from dash.dependencies import Input, Output
+
+# Carga de datos desde un archivo 'Data.xlsx' (asegúrate de tenerlo en la misma carpeta)
+df = pd.read_excel('Data.xlsx')
+
+app = dash.Dash(__name__)
+
+# Obtener valores únicos para cada columna
+estados = df['ENTIDAD_FEDERATIVA'].unique()
+municipios = df['MUNICIPIO'].unique()
+instituciones = df['INSTITUCION_DE_EDUCACION_SUPERIOR'].unique()
+programas = df['PROGRAMADEESTUDIOS'].unique()
+clasificaciones = df['Clasificación'].unique()
+carreras_areas = df['Carrera_Areas'].unique()
+
+app.layout = html.Div([
+    dcc.Dropdown(id='estado', options=[{'label': estado, 'value': estado} for estado in estados], multi=True, placeholder="Selecciona Estado(s)"),
+    dcc.Dropdown(id='municipio', multi=True, placeholder="Selecciona Municipio(s)"),
+    dcc.Dropdown(id='institucion', multi=True, placeholder="Selecciona Institución de Educación Superior"),
+    dcc.Dropdown(id='programa', multi=True, placeholder="Selecciona Programa de Estudios"),
+    dcc.Dropdown(id='clasificacion', multi=True, placeholder="Selecciona Clasificación"),
+    dcc.Dropdown(id='carrera', multi=True, placeholder="Selecciona Carrera/Área"),
+    dash_table.DataTable(id='table')
+])
+
+@app.callback(
+    Output('municipio', 'options'),
+    Input('estado', 'value')
+)
+def update_municipios(selected_states):
+    if not selected_states:
+        return []
+    else:
+        filtered_df = df[df['ENTIDAD_FEDERATIVA'].isin(selected_states)]
+        municipios = filtered_df['MUNICIPIO'].unique()
+        return [{'label': municipio, 'value': municipio} for municipio in municipios]
+
+@app.callback(
+    Output('institucion', 'options'),
+    Input('estado', 'value'),
+    Input('municipio', 'value')
+)
+def update_instituciones(selected_states, selected_municipios):
+    if not selected_states or not selected_municipios:
+        return []
+    else:
+        filtered_df = df[df['ENTIDAD_FEDERATIVA'].isin(selected_states) & df['MUNICIPIO'].isin(selected_municipios)]
+        instituciones = filtered_df['INSTITUCION_DE_EDUCACION_SUPERIOR'].unique()
+        return [{'label': institucion, 'value': institucion} for institucion in instituciones]
+
+@app.callback(
+    Output('programa', 'options'),
+    Input('estado', 'value'),
+    Input('municipio', 'value'),
+    Input('institucion', 'value')
+)
+def update_programas(selected_states, selected_municipios, selected_instituciones):
+    if not selected_states or not selected_municipios or not selected_instituciones:
+        return []
+    else:
+        filtered_df = df[df['ENTIDAD_FEDERATIVA'].isin(selected_states) & df['MUNICIPIO'].isin(selected_municipios) & df['INSTITUCION_DE_EDUCACION_SUPERIOR'].isin(selected_instituciones)]
+        programas = filtered_df['PROGRAMADEESTUDIOS'].unique()
+        return [{'label': programa, 'value': programa} for programa in programas]
+
+@app.callback(
+    Output('clasificacion', 'options'),
+    Input('estado', 'value'),
+    Input('municipio', 'value'),
+    Input('institucion', 'value'),
+    Input('programa', 'value')
+)
+def update_clasificaciones(selected_states, selected_municipios, selected_instituciones, selected_programas):
+    if not selected_states or not selected_municipios or not selected_instituciones or not selected_programas:
+        return []
+    else:
+        filtered_df = df[df['ENTIDAD_FEDERATIVA'].isin(selected_states) & df['MUNICIPIO'].isin(selected_municipios) & df['INSTITUCION_DE_EDUCACION_SUPERIOR'].isin(selected_instituciones) & df['PROGRAMADEESTUDIOS'].isin(selected_programas)]
+        clasificaciones = filtered_df['Clasificación'].unique()
+        return [{'label': clasificacion, 'value': clasificacion} for clasificacion in clasificaciones]
+
+@app.callback(
+    Output('carrera', 'options'),
+    Input('estado', 'value'),
+    Input('municipio', 'value'),
+    Input('institucion', 'value'),
+    Input('programa', 'value'),
+    Input('clasificacion', 'value')
+)
+def update_carreras(selected_states, selected_municipios, selected_instituciones, selected_programas, selected_clasificaciones):
+    if not selected_states or not selected_municipios or not selected_instituciones or not selected_programas or not selected_clasificaciones:
+        return []
+    else:
+        filtered_df = df[df['ENTIDAD_FEDERATIVA'].isin(selected_states) & df['MUNICIPIO'].isin(selected_municipios) & df['INSTITUCION_DE_EDUCACION_SUPERIOR'].isin(selected_instituciones) & df['PROGRAMADEESTUDIOS'].isin(selected_programas) & df['Clasificación'].isin(selected_clasificaciones)]
+        carreras_areas = filtered_df['Carrera_Areas'].unique()
+        return [{'label': area, 'value': area} for area in carreras_areas]
+
+@app.callback(
+    Output('table', 'data'),
+    Input('estado', 'value'),
+    Input('municipio', 'value'),
+    Input('institucion', 'value'),
+    Input('programa', 'value'),
+    Input('clasificacion', 'value'),
+    Input('carrera', 'value')
+)
+def update_table(selected_states, selected_municipios, selected_instituciones, selected_programas, selected_clasificaciones, selected_carreras_areas):
+    if not selected_states:
+        return []
+
+    # Filtrar el DataFrame según las selecciones
+    filtered_df = df[
+        df['ENTIDAD_FEDERATIVA'].isin(selected_states) &
+        df['MUNICIPIO'].isin(selected_municipios) &
+        df['INSTITUCION_DE_EDUCACION_SUPERIOR'].isin(selected_instituciones) &
+        df['PROGRAMADEESTUDIOS'].isin(selected_programas) &
+        df['Clasificación'].isin(selected_clasificaciones) &
+        df['Carrera_Areas'].isin(selected_carreras_areas)
+    ]
+
+    # Devolver los datos como un diccionario de registros
+    data = filtered_df.to_dict('records')
+    return data
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
+
+
+
+
+
+
+
+
+
+
+
+Para determinar los mejores gráficos para analizar los datos en función de las columnas que utilizas en el código, primero es importante comprender el tipo de datos y el propósito del análisis. A continuación, te daré algunas sugerencias de gráficos adecuados para cada una de las columnas:
+
+1. ENTIDAD_FEDERATIVA:
+   - Gráfico de barras: Puedes crear un gráfico de barras que muestre la frecuencia de cada entidad federativa. Esto te permitirá visualizar cuántos registros están asociados con cada estado.
+
+2. MUNICIPIO:
+   - Gráfico de barras: Similar al caso anterior, un gráfico de barras mostrará la frecuencia de cada municipio en los registros.
+
+3. INSTITUCION_DE_EDUCACION_SUPERIOR:
+   - Gráfico de barras: Puedes utilizar un gráfico de barras para ver cuántas veces aparece cada institución de educación superior en los datos.
+
+4. PROGRAMADEESTUDIOS:
+   - Gráfico de barras: Un gráfico de barras también es adecuado para mostrar la frecuencia de los programas de estudios.
+
+5. Clasificación:
+   - Gráfico de barras: Utiliza un gráfico de barras para representar la frecuencia de cada clasificación.
+
+6. Carrera_Areas:
+   - Gráfico de barras: De nuevo, un gráfico de barras es útil para mostrar cuántas veces aparece cada área de carrera.
+
+Si deseas realizar un análisis comparativo o de relaciones entre estas columnas, también podrías considerar otros tipos de gráficos, como:
+   
+- Mapa de calor: Para visualizar la relación entre las entidades federativas y los municipios.
+- Gráfico de dispersión: Si deseas comparar dos columnas y ver si existe alguna correlación.
+- Gráfico de tarta (pastel): Para representar la distribución de clases (clasificación) como porcentajes.
+
+La elección del gráfico dependerá de tus objetivos específicos de análisis y la historia que deseas contar con los datos. Ten en cuenta que puedes utilizar Dash y Plotly para crear estos gráficos de manera interactiva y explorar mejor tus datos.
+--------------------------------------------------------------------------------------------------
+
+import dash
+from dash import dcc, html, dash_table
+import pandas as pd
+from dash.dependencies import Input, Output
+import plotly.express as px
+
+# Carga de datos desde un archivo 'Data.xlsx' (asegúrate de tenerlo en la misma carpeta)
+df = pd.read_excel('Data.xlsx')
+
+app = dash.Dash(__name__)
+
+# Obtener valores únicos para cada columna
+estados = df['ENTIDAD_FEDERATIVA'].unique()
+municipios = df['MUNICIPIO'].unique()
+instituciones = df['INSTITUCION_DE_EDUCACION_SUPERIOR'].unique()
+programas = df['PROGRAMADEESTUDIOS'].unique()
+clasificaciones = df['Clasificación'].unique()
+carreras_areas = df['Carrera_Areas'].unique()
+
+# Crear un gráfico de barras para la variable "ENTIDAD_FEDERATIVA"
+def create_entidad_federativa_bar_chart(selected_states):
+    if not selected_states:
+        return px.bar(title="Selecciona uno o más estados")
+    filtered_df = df[df['ENTIDAD_FEDERATIVA'].isin(selected_states)]
+    entidad_federativa_counts = filtered_df['ENTIDAD_FEDERATIVA'].value_counts().reset_index()
+    entidad_federativa_counts.columns = ['ENTIDAD_FEDERATIVA', 'Frecuencia']
+    fig = px.bar(
+        entidad_federativa_counts, x='ENTIDAD_FEDERATIVA', y='Frecuencia',
+        title="Frecuencia de ENTIDAD_FEDERATIVA en los estados seleccionados",
+        labels={'ENTIDAD_FEDERATIVA': 'Entidad Federativa', 'Frecuencia': 'Frecuencia'}
+    )
+    fig.update_traces(marker_color='rgb(158,202,225)', marker_line_color='rgb(8,48,107)', marker_line_width=1.5)
+    fig.update_xaxes(tickangle=45, tickfont=dict(size=10))
+    fig.update_layout(title_x=0.5, xaxis_categoryorder='total ascending')
+    return fig
+
+# Crear un gráfico de barras para los municipios
+def create_municipio_bar_chart(selected_states):
+    if not selected_states:
+        return px.bar(title="Selecciona un estado para ver los municipios")
+
+    fig = px.bar()
+    for estado in selected_states:
+        filtered_df = df[df['ENTIDAD_FEDERATIVA'] == estado]
+        municipio_counts = filtered_df['MUNICIPIO'].value_counts().reset_index()
+        municipio_counts.columns = ['MUNICIPIO', 'Frecuencia']
+        fig.add_bar(
+            x=municipio_counts['MUNICIPIO'],
+            y=municipio_counts['Frecuencia'],
+            name=estado
+        )
+
+    fig.update_xaxes(tickangle=45, tickfont=dict(size=10))
+    fig.update_layout(title="Frecuencia de MUNICIPIOS en los estados seleccionados", barmode='stack')
+    return fig
+
+app.layout = html.Div([
+    dcc.Dropdown(id='estado', options=[{'label': estado, 'value': estado} for estado in estados], multi=True, placeholder="Selecciona Estado(s)"),
+    dcc.Dropdown(id='municipio', multi=True, placeholder="Selecciona Municipio(s)"),
+    dcc.Dropdown(id='institucion', multi=True, placeholder="Selecciona Institución de Educación Superior"),
+    dcc.Dropdown(id='programa', multi=True, placeholder="Selecciona Programa de Estudios"),
+    dcc.Dropdown(id='clasificacion', multi=True, placeholder="Selecciona Clasificación"),
+    dcc.Graph(id='entidad-federativa-graph'),
+    dcc.Graph(id='municipio-graph'),
+    dash_table.DataTable(id='table')
+])
+
+@app.callback(
+    Output('municipio', 'options'),
+    Input('estado', 'value')
+)
+def update_municipios(selected_states):
+    if not selected_states:
+        return []
+    else:
+        filtered_df = df[df['ENTIDAD_FEDERATIVA'].isin(selected_states)]
+        municipios = filtered_df['MUNICIPIO'].unique()
+        return [{'label': municipio, 'value': municipio} for municipio in municipios]
+
+@app.callback(
+    Output('entidad-federativa-graph', 'figure'),
+    Input('estado', 'value')
+)
+def update_entidad_federativa_graph(selected_states):
+    return create_entidad_federativa_bar_chart(selected_states)
+
+@app.callback(
+    Output('municipio-graph', 'figure'),
+    Input('estado', 'value')
+)
+def update_municipio_graph(selected_states):
+    return create_municipio_bar_chart(selected_states)
+
+# Resto de tus callbacks...
+
+if __name__ == '__main__':
+    app.run_server(debug=True)

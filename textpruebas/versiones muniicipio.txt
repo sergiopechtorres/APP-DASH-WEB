@@ -1,0 +1,664 @@
+
+import dash
+ 
+from dash import dash_table as dt
+import plotly.graph_objs as go
+from dash import html, dcc, callback, Input, Output
+import pandas as pd 
+import plotly.express as px
+
+dash.register_page(__name__,name='Municipio')
+#-------------------------------------------------------------------------------------------------------------------------------
+df = pd.read_excel('Data.xlsx')
+list_municipio= df.groupby(['ENTIDAD_FEDERATIVA','MUNICIPIO'])[['Lugares_Ofertados','Solicitudes_de_Primer_Ingreso']].sum().reset_index()
+
+df2 = df.groupby(['ENTIDAD_FEDERATIVA']).sum()
+df3 = df.groupby('ENTIDAD_FEDERATIVA').sum().reset_index()
+df4=df['ENTIDAD_FEDERATIVA'].unique()
+#print(df4)
+#print(list_municipio)
+
+
+#--------------------------------------------------------------------------------------------------------------------------------
+layout = html.Div ( [
+    
+     html.Div([
+        html.H1('ANUIES DASH'),
+        html.Img(src='assets/municipios.png')
+    ], className = 'banner'),
+     
+html.Div([
+    html.Div([
+        html.Div([
+            html.H3('Estados de México',style={'margin-botton':'8px','color':'black'}),
+                 ])
+        
+             ],className='create_container1 four columns',id="title"),
+        
+         ],id="header",className="row flex-display",style={'margin-bottom' : "25px"}),
+
+
+#drop down list(Estado)para mostrar sus municipios correspondientes---------------------------
+html.Div([
+    html.Div([
+            html.P('Selecciona el estado',className='fix_label',style={'color':'black','text-align':'center'}),
+            dcc.Dropdown(id='select_estados',
+                          multi=False,
+                          clearable=True,
+                          disabled=False,
+                          style={'display':True},
+                          value='AGUASCALIENTES',
+                          placeholder='Selecciona Estado',
+                          options=[{'label': c,'value': c}
+                                   for c in (df['ENTIDAD_FEDERATIVA'].unique())],className="dcc_compon" )
+                                                            
+             ],className='create_container1 four columns',style={'margin-botton':'8px'})
+         
+],className="row flex-display"),
+    
+#Data Table
+
+
+#Data Table
+
+html.Div([
+html.Div([
+    
+        dt.DataTable(id='my_datatable',
+                     columns=[{'id': c, 'name': c} for c in df.columns.values],
+                     sort_action="native",
+                     sort_mode="multi",
+                     
+                               
+                     virtualization=True,
+                     style_cell={'textAling':'left',
+                                 'min-width':'230px',
+                                 'backgroudColor':'#34495E',
+                                 'color':'#34495E',
+                                 'border-botton':'0.01rem solid #313841',
+                                },
+                    style_as_list_view=True,
+                    style_header={
+                         'backgroudColor':'#34495E',
+                         'fontWeight':'bold',
+                         'font':'Lato,sans-serif',
+                         'color':'orange',
+                         'border':'#34495E',
+                          },
+                style_data={'textOverflow':'hidden','color':'#34495E'},
+                fixed_rows={'headers':True}
+                )
+        
+    ],className='create_container2 thirteen columns'),
+
+
+#-------------------------------------------------
+
+html.Div([
+    html.Br(),
+    dcc.Graph(id = 'my_ejemplo', 
+                      config={'displayModeBar' : 'hover'})
+            
+         ], className = 'create_container2 thirteen columns'),
+
+], className = 'row flex-display'),
+
+#-------------------------------------------------------------
+html.Div([
+html.Div([
+    html.Br(),
+    dcc.Graph(id='my_pie',
+              config={'displayModeBar' : 'hover'})
+        ], className = 'create_container2 thirteen columns'),
+
+#-----------scatter --------------
+html.Div([
+        dcc.Graph(id='municipio_scatter',
+                  config={'displayModeBar' : 'hover'})
+        
+        
+    ], className = 'create_container2 thirteen columns',)
+
+], className = 'row flex-display'),
+
+#Horizontal bar chart(top_municipios)
+html.Div([
+    html.Br(),
+    dcc.Graph(id='top_1',
+              config={'displayModeBar':True}),
+    
+         ],className="create_container fourteen columns"),
+
+],className="create_container five row"),
+
+
+#conbination of bar and line chart (lugaresofertados and solicitudes)
+html.Div([
+    html.Br(),
+    html.Div([
+        dcc.Graph(id='municipio_scatter',
+                  config={'displayModeBar':'hover'}),
+], className = 'create_container six columns'),
+
+#linechart(lugaresofertados and solicitudes)
+html.Div([
+    html.Br(),
+    dcc.Graph(id='line_1',
+              config={'displayModeBar':'hover'}),
+         ],className="create_container six columns"),
+
+],className="column flex-display"),
+#--------------
+
+#----------------------------------------------------------------
+@callback(
+    Output('my_ejemplo', component_property='figure'),
+    [Input('select_estados', component_property='value')])
+
+def update_ejemplo(select_estados):
+    list_municipio= df.groupby(['ENTIDAD_FEDERATIVA','MUNICIPIO'])[['Lugares_Ofertados','Solicitudes_de_Primer_Ingreso','Primer_Ingreso_Total','Matrícula_Total','Egresados_Total','Titulados_Total']].sum().reset_index()
+    list_estado=list_municipio[list_municipio['ENTIDAD_FEDERATIVA']==select_estados].sort_values(by=['Lugares_Ofertados','Solicitudes_de_Primer_Ingreso'],ascending=False)
+    figo = go.Figure(data=[
+        go.Bar(name='Lugares Ofertados',
+               x=list_estado[list_estado['ENTIDAD_FEDERATIVA'] == select_estados]['MUNICIPIO'],
+               y=list_estado[list_estado['ENTIDAD_FEDERATIVA'] == select_estados]['Lugares_Ofertados'],
+               ),
+        go.Bar(name='Solitudes de Primer Ingreso',
+               x=list_estado[list_estado['ENTIDAD_FEDERATIVA'] == select_estados]['MUNICIPIO'],
+               y=list_estado[list_estado['ENTIDAD_FEDERATIVA'] == select_estados]['Solicitudes_de_Primer_Ingreso']),
+        go.Bar(name='Primer Ingreso Totales',
+               x=list_estado[list_estado['ENTIDAD_FEDERATIVA'] == select_estados]['MUNICIPIO'],
+               y=list_estado[list_estado['ENTIDAD_FEDERATIVA'] == select_estados]['Primer_Ingreso_Total']),
+        go.Bar(name='Matrícula_Total',
+               x=list_estado[list_estado['ENTIDAD_FEDERATIVA'] == select_estados]['MUNICIPIO'],
+               y=list_estado[list_estado['ENTIDAD_FEDERATIVA'] == select_estados]['Matrícula_Total']),
+        go.Bar(name='Egresados',
+               x=list_estado[list_estado['ENTIDAD_FEDERATIVA'] == select_estados]['MUNICIPIO'],
+               y=list_estado[list_estado['ENTIDAD_FEDERATIVA'] == select_estados]['Egresados_Total']),
+        go.Bar(name='Titulados',
+               x=list_estado[list_estado['ENTIDAD_FEDERATIVA'] == select_estados]['MUNICIPIO'],
+               y=list_estado[list_estado['ENTIDAD_FEDERATIVA'] == select_estados]['Titulados_Total']),
+                           
+                           
+                           ])
+    figo.update_layout(title={'text':'Lista de Municipios de : ' + (select_estados)})
+
+    
+                       
+    return figo
+
+
+#................................................................
+@callback(
+    Output('my_pie', component_property='figure'),
+    [Input('select_estados', component_property='value')])
+
+def update_pie_muni(select_estados):
+    # Filtrar los datos por el estado seleccionado
+    datos_estado = df[df['ENTIDAD_FEDERATIVA'] == select_estados]
+
+    # Cambiar las etiquetas para que coincidan con los nombres de las columnas en tu DataFrame
+    labels = ['Lugares_Ofertados', 'Solicitudes_de_Primer_Ingreso', 'Primer_Ingreso_Total', 'Matrícula_Total', 'Egresados_Total', 'Titulados_Total']
+
+    values = datos_estado[labels].sum().values
+
+    fig_pie = go.Figure()
+    fig_pie.add_trace(
+        go.Pie(
+            labels=labels,
+            values=values,
+            textinfo="percent+label",  # Muestra el porcentaje y la etiqueta en las porciones del gráfico
+        )
+    )
+
+    fig_pie.update_layout(
+        title=f'Gráfico de Tarta para Ciudades en {select_estados}',
+        legend=dict(orientation="h"),  # Posición horizontal de la leyenda
+    )
+
+    return fig_pie
+
+
+
+
+#-------------------------------------------------------------------------------------------------
+def municipios_value(select_estados):
+    return[k['value']for k in select_estados][1]
+
+@callback(
+    Output('municipio_scatter','figure'),
+    Input('select_estados','value'))
+
+def municipios_value(select_estados):
+    estado5= df.groupby(['ENTIDAD_FEDERATIVA','MUNICIPIO'])['Lugares_Ofertados','Solicitudes_de_Primer_Ingreso','Primer_Ingreso_Total',
+                                                            'Matrícula_Total','Egresados_Total','Titulados_Total'].sum().reset_index()
+    estado6=estado5[estado5['ENTIDAD_FEDERATIVA']==select_estados].sort_values(by=['Lugares_Ofertados','Solicitudes_de_Primer_Ingreso',
+                                                                                   'Primer_Ingreso_Total','Matrícula_Total',
+                                                                                   'Egresados_Total','Titulados_Total'],ascending=False)
+    figo = go.Figure(data=[
+        go.Scatter(name='Lugares_Ofertados',
+                           x=estado6[estado6['ENTIDAD_FEDERATIVA'] == select_estados]['MUNICIPIO'],
+                           y=estado6['Lugares_Ofertados'],
+                           mode='markers'                          
+                     ),
+        
+        go.Scatter(name='Solitudes de Primer Ingreso',
+               x=estado6[estado6['ENTIDAD_FEDERATIVA'] == select_estados]['MUNICIPIO'],
+               y=estado6['Solicitudes_de_Primer_Ingreso'],
+               mode='markers'
+               ),
+        go.Scatter(name='Primer_Ingreso_Total',
+               x=estado6[estado6['ENTIDAD_FEDERATIVA'] == select_estados]['MUNICIPIO'],
+               y=estado6['Primer_Ingreso_Total'],
+               mode='markers'
+               ),
+        go.Scatter(name='Matrícula_Total',
+               x=estado6[estado6['ENTIDAD_FEDERATIVA'] == select_estados]['MUNICIPIO'],
+               y=estado6['Matrícula_Total'],
+               mode='markers'
+               ),
+        go.Scatter(name='Egresados_Total',
+               x=estado6[estado6['ENTIDAD_FEDERATIVA'] == select_estados]['MUNICIPIO'],
+               y=estado6['Egresados_Total'],
+               mode='markers'
+               ),
+        go.Scatter(name='Titulados_Total',
+               x=estado6[estado6['ENTIDAD_FEDERATIVA'] == select_estados]['MUNICIPIO'],
+               y=estado6['Titulados_Total'],
+               mode='markers'
+               )
+    ])
+    figo.update_layout(title={'text':'Lista de Municipios de : ' + (select_estados)})
+        
+    return figo
+
+#--------------------------------------------------------------------
+#datatable
+@callback(
+    Output('my_datatable', 'data'),
+    [Input('select_estados','value')])
+
+def display_table(select_estados):
+    data_table=df[df['ENTIDAD_FEDERATIVA']==select_estados]
+    return data_table.to_dict('records')
+@callback(
+    Output('top_1', 'figure'),
+    [Input('select_estados', 'value')])
+
+def update_graph(select_estados):
+    top_municipio = df.groupby(['ENTIDAD_FEDERATIVA', 'MUNICIPIO'])[
+        'Lugares_Ofertados', 'Solicitudes_de_Primer_Ingreso',
+        'Primer_Ingreso_Total', 'Matrícula_Total', 'Egresados_Total', 'Titulados_Total'].sum().reset_index()
+    top_estado = top_municipio[top_municipio['ENTIDAD_FEDERATIVA'] == select_estados].sort_values(
+        by='Lugares_Ofertados', ascending=False)
+
+    data = []
+    data.append(go.Bar(
+        x=top_estado['Lugares_Ofertados'],
+        y=top_estado['MUNICIPIO'],
+        name='Lugares Ofertados',
+        orientation='h',
+        marker=dict(color='#17becf')  # Cambiar el color de esta barra
+    ))
+    data.append(go.Bar(
+        x=top_estado['Solicitudes_de_Primer_Ingreso'],
+        y=top_estado['MUNICIPIO'],
+        name='Solicitudes de Primer Ingreso',
+        orientation='h',
+        marker=dict(color='#7FDBFF')  # Cambiar el color de esta barra
+    ))
+    data.append(go.Bar(
+        x=top_estado['Primer_Ingreso_Total'],
+        y=top_estado['MUNICIPIO'],
+        name='Primer Ingreso Total',
+        orientation='h',
+        marker=dict(color='#B10DC9')  # Cambiar el color de esta barra
+    ))
+    data.append(go.Bar(
+        x=top_estado['Matrícula_Total'],
+        y=top_estado['MUNICIPIO'],
+        name='Matrícula Total',
+        orientation='h',
+        marker=dict(color='#FFDC00')  # Cambiar el color de esta barra
+    ))
+    data.append(go.Bar(
+        x=top_estado['Egresados_Total'],
+        y=top_estado['MUNICIPIO'],
+        name='Egresados Total',
+        orientation='h',
+        marker=dict(color='#FF851B')  # Cambiar el color de esta barra
+    ))
+    data.append(go.Bar(
+        x=top_estado['Titulados_Total'],
+        y=top_estado['MUNICIPIO'],
+        name='Titulados Total',
+        orientation='h',
+        marker=dict(color='#FF4136')  # Cambiar el color de esta barra
+    ))
+
+    return {
+        'data': data,
+        'layout': go.Layout(
+            barmode='stack',  # Cambiar a 'stack' para apilar las barras
+            plot_bgcolor='#f2f2f2',  # Cambiar el color de fondo del gráfico
+            paper_bgcolor='#f2f2f2',  # Cambiar el color del papel del gráfico
+            title={
+                'text': 'Lista Municipios en ' + (select_estados),
+                'y': 0.99,
+                'x': 0.5,
+                'xanchor': 'center',
+                'yanchor': 'top'
+            },
+            titlefont={
+                'color': 'black',  # Cambiar el color del título
+                'size': 15
+            },
+            hovermode='closest',
+            margin=dict(l=130, b=35, r=8, t=17),
+            xaxis=dict(title='<b>Datos</b>'),
+            showlegend=True,
+            font=dict(
+                family="Arial, sans-serif",  # Cambiar la fuente del texto
+                size=12,
+                color="black"  # Cambiar el color del texto
+            )
+        )
+    }
+------------------------------------------------------------------------------------------------------------------------------------------
+import dash
+from dash import dash_table as dt
+import plotly.graph_objs as go
+from dash import html, dcc, Input, Output
+import pandas as pd
+
+# Crear la aplicación Dash
+app = dash.Dash(__name__)
+
+# Cargar tus datos desde un archivo (asegúrate de tener un archivo 'Data.xlsx' en el mismo directorio)
+df = pd.read_excel('Data.xlsx')
+
+# Agrega un Dropdown para seleccionar el año
+app.layout = html.Div([
+    html.Div([
+        html.H1('ANUIES DASH'),
+        html.Img(src='assets/municipios.png')
+    ], className='banner'),
+
+    html.Div([
+        html.Div([
+            html.Div([
+                html.H3('Estados de México', style={
+                    'margin-bottom': '8px', 'color': 'black'}),
+            ])
+        ], className='create_container1 four columns', id="title"),
+    ], id="header", className="row flex-display", style={'margin-bottom': "25px"}),
+
+    # Drop down list (Estado) para mostrar sus municipios correspondientes
+    html.Div([
+        html.Div([
+            html.P('Selecciona el estado', className='fix_label',
+                   style={'color': 'black', 'text-align': 'center'}),
+            dcc.Dropdown(
+                id='select_estados',
+                multi=False,
+                clearable=True,
+                disabled=False,
+                style={'display': True},
+                value='AGUASCALIENTES',
+                placeholder='Selecciona Estado',
+                options=[{'label': c, 'value': c}
+                         for c in df['ENTIDAD_FEDERATIVA'].unique()],
+                className="dcc_compon"
+            ),
+
+            # Agrega un Dropdown para seleccionar el año
+            html.P('Selecciona el año', className='fix_label',
+                   style={'color': 'black', 'text-align': 'center'}),
+            dcc.Dropdown(
+                id='select_anio',
+                multi=False,
+                clearable=True,
+                disabled=False,
+                style={'display': True},
+                value=2022,  # Ajusta esto según tus años reales en el DataFrame
+                placeholder='Selecciona Año',
+                options=[{'label': anio, 'value': anio}
+                         for anio in df['Año'].unique()],
+                className="dcc_compon"
+            )
+        ], className='create_container1 four columns', style={'margin-bottom': '8px'})
+    ], className="row flex-display"),
+
+    # Data Table
+    html.Div([
+        html.Div([
+            dt.DataTable(
+                id='my_datatable',
+                columns=[{'name': c, 'id': c} for c in df.columns],
+                page_current=0,
+                page_size=10,
+                page_action='custom',
+            ),
+        ], className='create_container2 thirteen columns'),
+    ], className='row flex-display'),
+
+    # Gráfico de Barras con la Suma de Variables por Municipio
+    html.Div([
+        html.Br(),
+        dcc.Graph(id='bar_chart',
+                  config={'displayModeBar': 'hover'})
+    ], className='create_container2 thirteen columns')
+])
+
+# Actualiza tus callbacks para incluir el año seleccionado
+@app.callback(
+    [Output('my_datatable', 'data'),
+     Output('bar_chart', 'figure')],
+    [Input('select_estados', 'value'), Input('select_anio', 'value')]
+)
+def update_data(select_estados, select_anio):
+    # Filtra los datos según el estado y el año seleccionados
+    filtered_data = df[(df['ENTIDAD_FEDERATIVA'] == select_estados)
+                       & (df['Año'] == select_anio)]
+
+    # Actualiza la Data Table
+    data_table = filtered_data.to_dict('records')
+
+    # Variables a mostrar en el gráfico
+    variables = ['Lugares_Ofertados', 'Solicitudes_de_Primer_Ingreso', 'Primer_Ingreso_Total',
+                 'Matrícula_Total', 'Egresados_Total', 'Titulados_Total']
+
+    # Calcula la suma de cada variable por municipio
+    variable_sums = filtered_data.groupby('MUNICIPIO')[variables].sum().reset_index()
+
+    bar_data = []
+    for variable in variables:
+        bar_data.append(
+            go.Bar(
+                x=variable_sums['MUNICIPIO'],
+                y=variable_sums[variable],
+                name=variable,
+                text=variable_sums[variable],  # Agrega etiquetas de valores
+                textposition='inside',  # Ubica las etiquetas dentro de las barras
+            )
+        )
+
+    bar_fig = go.Figure(data=bar_data)
+    bar_fig.update_layout(
+        barmode='group',  # Agrupa las barras por municipio
+        title='Suma de Variables por Municipio',
+        xaxis_title='Municipio',
+        yaxis_title='Suma',
+        yaxis=dict(title="Suma")
+    )
+
+    return data_table, bar_fig
+
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
+--------------------------------------------------------------
+
+
+import dash
+from dash import dash_table as dt
+import plotly.graph_objs as go
+from dash import html, dcc, Input, Output, callback
+import pandas as pd
+
+# Crear la aplicación Dash
+
+dash.register_page(__name__,name='Municipio')
+title = 'Municipio'
+
+# Cargar tus datos desde un archivo (asegúrate de tener un archivo 'Data.xlsx' en el mismo directorio)
+df = pd.read_excel('Data.xlsx')
+
+# Agrega un Dropdown para seleccionar el año
+layout = html.Div([
+    html.Div([
+        html.H1('ANUIES DASH'),
+        html.Img(src='assets/municipios.png')
+    ], className='banner'),
+
+    html.Div([
+        html.Div([
+            html.Div([
+                html.H3('Estados de México', style={
+                    'margin-bottom': '8px', 'color': 'black'}),
+            ])
+        ], className='create_container1 four columns', id="title"),
+    ], id="header", className="row flex-display", style={'margin-bottom': "25px"}),
+
+    # Drop down list (Estado) para mostrar sus municipios correspondientes
+    html.Div([
+        html.Div([
+            html.P('Selecciona el estado', className='fix_label',
+                   style={'color': 'black', 'text-align': 'center'}),
+            dcc.Dropdown(
+                id='select_estados',
+                multi=False,
+                clearable=True,
+                disabled=False,
+                style={'display': True},
+                value='AGUASCALIENTES',
+                placeholder='Selecciona Estado',
+                options=[{'label': c, 'value': c}
+                         for c in df['ENTIDAD_FEDERATIVA'].unique()],
+                className="dcc_compon"
+            ),
+
+            # Agrega un Dropdown para seleccionar el año
+            html.P('Selecciona el año', className='fix_label',
+                   style={'color': 'black', 'text-align': 'center'}),
+            dcc.Dropdown(
+                id='select_anio',
+                multi=False,
+                clearable=True,
+                disabled=False,
+                style={'display': True},
+                value=2022,  # Ajusta esto según tus años reales en el DataFrame
+                placeholder='Selecciona Año',
+                options=[{'label': anio, 'value': anio}
+                         for anio in df['Año'].unique()],
+                className="dcc_compon"
+            )
+        ], className='create_container1 four columns', style={'margin-bottom': '8px'})
+    ], className="row flex-display"),
+
+    # Data Table
+    html.Div([
+        html.Div([
+            dt.DataTable(
+                id='my_datatable',
+                columns=[{'name': c, 'id': c} for c in df.columns],
+                page_current=0,
+                page_size=10,
+                page_action='custom',
+            ),
+        ], className='create_container2 thirteen columns'),
+    ], className='row flex-display'),
+
+    # Gráfico de Barras con la Suma de Variables por Municipio
+    html.Div([
+        html.Br(),
+        dcc.Graph(id='bar_chartM',
+                  config={'displayModeBar': 'hover'})
+    ], className='create_container2 thirteen columns'),
+
+    # Gráfico Lineal con la Suma de Variables por Municipio
+    html.Div([
+        html.Br(),
+        dcc.Graph(id='line_chartM',
+                  config={'displayModeBar': 'hover'})
+    ], className='create_container2 thirteen columns')
+])
+
+# Actualiza tus callbacks para incluir el año seleccionado
+@callback(
+    [Output('my_datatable', 'data'),
+     Output('bar_chartM', 'figure'),
+     Output('line_chartM', 'figure')],
+    [Input('select_estados', 'value'), Input('select_anio', 'value')]
+)
+def update_data(select_estados, select_anio):
+    # Filtra los datos según el estado y el año seleccionados
+    filtered_data = df[(df['ENTIDAD_FEDERATIVA'] == select_estados)
+                       & (df['Año'] == select_anio)]
+
+    # Actualiza la Data Table
+    data_table = filtered_data.to_dict('records')
+
+    # Variables a mostrar en los gráficos
+    variables = ['Lugares_Ofertados', 'Solicitudes_de_Primer_Ingreso', 'Primer_Ingreso_Total',
+                 'Matrícula_Total', 'Egresados_Total', 'Titulados_Total']
+
+    # Calcula la suma de cada variable por municipio
+    variable_sums = filtered_data.groupby('MUNICIPIO')[variables].sum().reset_index()
+
+    bar_data = []
+    line_data = []
+
+    for variable in variables:
+        # Gráfico de Barras
+        bar_data.append(
+            go.Bar(
+                x=variable_sums['MUNICIPIO'],
+                y=variable_sums[variable],
+                name=variable,
+                text=variable_sums[variable],  # Agrega etiquetas de valores
+                textposition='inside',  # Ubica las etiquetas dentro de las barras
+            )
+        )
+
+        # Gráfico Lineal
+        line_data.append(
+            go.Scatter(
+                x=variable_sums['MUNICIPIO'],
+                y=variable_sums[variable],
+                mode='lines+markers',
+                name=variable,
+                text=variable_sums[variable],  # Agrega etiquetas de valores
+                textposition='top center',  # Ubica las etiquetas en la parte inferior de las líneas
+            )
+        )
+
+    bar_fig = go.Figure(data=bar_data)
+    bar_fig.update_layout(
+        barmode='group',  # Agrupa las barras por municipio
+        title='Suma de Variables por Municipio',
+        xaxis_title='Municipio',
+        yaxis_title='Suma',
+        yaxis=dict(title="Suma")
+    )
+
+    line_fig = go.Figure(data=line_data)
+    line_fig.update_layout(
+        title='Suma de Variables por Municipio (Gráfico Lineal)',
+        xaxis_title='Municipio',
+        yaxis_title='Suma'
+    )
+
+    return data_table, bar_fig, line_fig
+
+----------------------------------------------------------------------------------------------------------------

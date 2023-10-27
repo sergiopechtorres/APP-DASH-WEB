@@ -1,0 +1,634 @@
+import dash
+from dash import dcc, html
+import pandas as pd 
+from dash.dependencies import Input, Output
+from dash import html, dcc, callback, Input, Output
+import dash_bootstrap_components as dbc
+import plotly.express as px
+
+df = pd.read_excel('Data.xlsx')
+
+df2 = df.groupby('ENTIDAD_FEDERATIVA').sum()
+df3 = df.groupby('ENTIDAD_FEDERATIVA').sum().reset_index()
+
+dash.register_page(__name__, name='Estado')
+
+layout = html.Div([
+    
+     html.Div([
+        html.H1('ANUIES DASH'),
+        html.Img(src='assets/estados.png')
+    ], className='banner'),
+     
+     html.Div([
+        html.Div([
+            html.P('Selecciona el indicador', className='fix_label', style={'color':'black', 'margin-top': '2px'}),
+            dcc.RadioItems(id='dosis-radioitems', 
+                           labelStyle={
+                               'display': 'inline-block',
+                               'margin-right': '6px',
+                               'font-weight': 300
+                           },
+                           options=[
+                               {'label': 'Lugares Ofertados', 'value': 'Lugares_Ofertados'},
+                               {'label': 'Solicitudes de Primer ingreso', 'value': 'Solicitudes_de_Primer_Ingreso'},
+                               {'label': 'Primer Ingreso', 'value': 'Primer_Ingreso_Total'},
+                               {'label': 'Matriculados', 'value': 'Matrícula_Total'},
+                               {'label': 'Egresados', 'value': 'Egresados_Total'},
+                               {'label': 'Titulados', 'value': 'Titulados_Total'},
+                           ],
+                           value='Lugares_Ofertados',
+                           style={'text-aling':'center', 'align-items': 'center', 'justify-content': 'center','color':'black'},
+                           className='dcc_compon'
+            ),
+        ], className='create_container2 nine columns', style={'margin-bottom': '10px'}),
+    ], className='row flex-display'),
+     
+    html.Div([
+        html.Div([
+            dcc.Graph(id='my_graph', figure={})
+        ], className='create_container2 eleven columns'),
+
+        html.Div([
+            dcc.Graph(id='pie_graph', figure={})
+        ], className='create_container2 eleven columns'),
+      
+    ], className='row flex-display'),
+      
+    html.Div([
+        html.Div([
+            dcc.Graph(id='scatter_graph', figure={})
+        ], className='create_container2 eleven columns')
+    ]),
+      
+    html.Div([
+        html.Div([
+            dcc.Graph(id='lin_graph', figure={})
+        ], className='create_container2 eleven columns')
+    ])
+], id='mainContainer', style={'display':'flex', 'flex-direction':'column'})
+                  
+@callback(
+    Output('my_graph', component_property='figure'),
+    [Input('dosis-radioitems', component_property='value')]
+)
+def update_graph(value):
+    title_text = 'Gráfico de Barras'
+
+    if value == 'Lugares_Ofertados':
+        fig = px.bar(df3, y="Lugares_Ofertados", x="ENTIDAD_FEDERATIVA",
+             color="ENTIDAD_FEDERATIVA", text="Lugares_Ofertados")
+        title_text = 'Gráfico de Barras - Lugares Ofertados'
+    elif value == 'Solicitudes_de_Primer_Ingreso':
+        fig = px.bar(df3, y="Solicitudes_de_Primer_Ingreso", x="ENTIDAD_FEDERATIVA",
+             color="ENTIDAD_FEDERATIVA", text="Solicitudes_de_Primer_Ingreso", color_discrete_sequence=[
+                 px.colors.qualitative.Alphabet[6],
+                 px.colors.qualitative.Alphabet[11],
+                 px.colors.qualitative.Plotly[2],
+                 px.colors.qualitative.Plotly[7],
+                 px.colors.qualitative.G10[5],
+                 px.colors.qualitative.Alphabet[12],
+                 px.colors.qualitative.Alphabet[13],
+                 px.colors.qualitative.Safe[5],
+                 px.colors.qualitative.Safe[6],
+                 px.colors.qualitative.Safe[9],
+                 ])
+        title_text = 'Gráfico de Barras - Solicitudes de Primer Ingreso'
+    elif value == 'Primer_Ingreso_Total':
+        fig = px.bar(df3, x="ENTIDAD_FEDERATIVA", y='Primer_Ingreso_Total',
+            color="ENTIDAD_FEDERATIVA", text="Primer_Ingreso_Total")
+        title_text = 'Gráfico de Barras - Primer Ingreso Total'
+    elif value == 'Matrícula_Total':
+        fig = px.bar(df3, x="ENTIDAD_FEDERATIVA", y='Matrícula_Total',
+            color="ENTIDAD_FEDERATIVA", text="Matrícula_Total")
+        title_text = 'Gráfico de Barras - Matrícula Total'
+    elif value == 'Egresados_Total':
+        fig = px.bar(df3, x="ENTIDAD_FEDERATIVA", y='Egresados_Total',
+            color="ENTIDAD_FEDERATIVA", text="Egresados_Total")
+        title_text = 'Gráfico de Barras - Egresados Total'
+    else:
+        fig = px.bar(df3, x="ENTIDAD_FEDERATIVA", y='Titulados_Total',
+            color="ENTIDAD_FEDERATIVA", text="Titulados_Total")
+        title_text = 'Gráfico de Barras - Titulados Total'
+    
+    fig.update_layout(
+        font_family="verdana",
+        font_color="blue",
+        title_font_family="Arial Black",
+        title_font_color="red",
+        legend_title_font_color="green",
+        font=dict(
+            family="verdana",
+            size=10,
+            color="RebeccaPurple"
+        )
+    )
+    fig.update_traces(textfont_size=8, textangle=0, textposition="inside", cliponaxis=False)
+    fig.update_xaxes(title_font_family="Arial")
+    fig.update_layout(title={'text': title_text})
+    
+    return fig
+
+@callback(
+    Output('pie_graph', component_property='figure'),
+    [Input('dosis-radioitems', component_property='value')]
+)
+def update_graph_pie(value):
+    title_text = 'Gráfico Circular'
+
+    if value == 'Lugares_Ofertados':
+        fig2 = px.pie(
+            data_frame=df3,
+            names='ENTIDAD_FEDERATIVA',
+            values='Lugares_Ofertados',
+            title='Gráfico circular (Pie chart)',
+            hover_data=['Lugares_Ofertados'],
+            labels='ENTIDAD_FEDERATIVA'
+        )
+        title_text = 'Gráfico Circular - Lugares Ofertados'
+    elif value == 'Solicitudes_de_Primer_Ingreso':
+        fig2 = px.pie(
+            data_frame=df3,
+            names='ENTIDAD_FEDERATIVA',
+            values='Solicitudes_de_Primer_Ingreso',
+            title='Gráfico circular (Pie chart)',
+            hover_data=['Solicitudes_de_Primer_Ingreso'],
+            labels={'Solicitudes_de_Primer_Ingreso': 'Solicitudes_de_Primer_Ingreso'}
+        )
+        title_text = 'Gráfico Circular - Solicitudes de Primer Ingreso'
+    elif value == 'Primer_Ingreso_Total':
+        fig2 = px.pie(
+            data_frame=df3,
+            names='ENTIDAD_FEDERATIVA',
+            values='Primer_Ingreso_Total',
+            title='Gráfico circular (Pie chart)',
+            hover_data=['Primer_Ingreso_Total'],
+            labels={'Primer_Ingreso_Total': 'Primer_Ingreso_Total'}
+        )
+        title_text = 'Gráfico Circular - Primer Ingreso Total'
+    elif value == 'Matrícula_Total':
+        fig2 = px.pie(
+            data_frame=df3,
+            names='ENTIDAD_FEDERATIVA',
+            values='Matrícula_Total',
+            title='Gráfico circular (Pie chart)',
+            hover_data=['Matrícula_Total'],
+            labels={'Matrícula_Total': 'Matrícula_Total'}
+        )
+        title_text = 'Gráfico Circular - Matrícula Total'
+    elif value == 'Egresados_Total':
+        fig2 = px.pie(
+            data_frame=df3,
+            names='ENTIDAD_FEDERATIVA',
+            values='Egresados_Total',
+            title='Gráfico circular (Pie chart)',
+            hover_data=['Egresados_Total'],
+            labels={'Egresados_Total': 'Egresados_Total'}
+        )
+        title_text = 'Gráfico Circular - Egresados Total'
+    else:
+        fig2 = px.pie(
+            data_frame=df3,
+            names='ENTIDAD_FEDERATIVA',
+            values='Titulados_Total',
+            title='Gráfico circular (Pie chart)',
+            hover_data=['Titulados_Total'],
+            labels={'Titulados_Total': 'Titulados_Total'}
+        )
+        title_text = 'Gráfico Circular - Titulados Total'
+
+    if fig2 is not None:
+        fig2.update_layout(
+            title={'text': title_text, 'x': 0.5},
+            uniformtext_minsize=12,
+            uniformtext_mode='hide'
+        )
+
+    return fig2
+
+@callback(
+    Output('scatter_graph', component_property='figure'),
+    [Input('dosis-radioitems', component_property='value')]
+)
+def update_scatter_graph(value):
+    title_text = 'Diagrama de Dispersión'
+
+    if value == 'Lugares_Ofertados':
+        fig3 = px.scatter(
+            data_frame=df2,
+            y='Lugares_Ofertados',
+            title='Diagrama de Dispersión - Lugares Ofertados'
+        )
+    elif value == 'Solicitudes_de_Primer_Ingreso':
+        fig3 = px.scatter(
+            data_frame=df2,
+            y='Solicitudes_de_Primer_Ingreso',
+            title='Diagrama de Dispersión - Solicitudes de Primer Ingreso'
+        )
+    elif value == 'Primer_Ingreso_Total':
+        fig3 = px.scatter(
+            data_frame=df2,
+            y='Primer_Ingreso_Total',
+            title='Diagrama de Dispersión - Primer Ingreso Total'
+        )
+    elif value == 'Matrícula_Total':
+        fig3 = px.scatter(
+            data_frame=df2,
+            y='Matrícula_Total',
+            title='Diagrama de Dispersión - Matrícula Total'
+        )
+    elif value == 'Egresados_Total':
+        fig3 = px.scatter(
+            data_frame=df2,
+            y='Egresados_Total',
+            title='Diagrama de Dispersión - Egresados Total'
+        )
+    else:
+        fig3 = px.scatter(
+            data_frame=df2,
+            y='Titulados_Total',
+            title='Diagrama de Dispersión - Titulados Total'
+        )
+
+    # Elimina el eje X
+    fig3.update_xaxes(showline=False, showgrid=False, zeroline=False, title='')
+
+    return fig3
+
+
+
+@callback(
+    Output('lin_graph', component_property='figure'),
+    [Input('dosis-radioitems', component_property='value')]
+)
+def update_line_graph(value):
+    title_text = 'Gráfico de Líneas'
+
+    if value == 'Lugares_Ofertados':
+        fig4 = px.line(df2, y='Lugares_Ofertados', title='Gráfico de Líneas - Lugares Ofertados')
+    elif value == 'Solicitudes_de_Primer_Ingreso':
+        fig4 = px.line(df2, y='Solicitudes_de_Primer_Ingreso', title='Gráfico de Líneas - Solicitudes de Primer Ingreso')
+    elif value == 'Primer_Ingreso_Total':
+        fig4 = px.line(df2, y='Primer_Ingreso_Total', title='Gráfico de Líneas - Primer Ingreso Total')
+    elif value == 'Matrícula_Total':
+        fig4 = px.line(df2, y='Matrícula_Total', title='Gráfico de Líneas - Matrícula Total')
+    elif value == 'Egresados_Total':
+        fig4 = px.line(df2, y='Egresados_Total', title='Gráfico de Líneas - Egresados Total')
+    else:
+        fig4 = px.line(df2, y='Titulados_Total', title='Gráfico de Líneas - Titulados Total')
+
+    return fig4
+
+-------------------------------------------------------
+version 2
+
+import dash
+from dash import dcc, html
+import pandas as pd 
+from dash.dependencies import Input, Output
+from dash import html, dcc, callback, Input, Output
+import dash_bootstrap_components as dbc
+import plotly.express as px
+
+df = pd.read_excel('Data.xlsx')
+
+df2 = df.groupby('ENTIDAD_FEDERATIVA').sum()
+df3 = df.groupby('ENTIDAD_FEDERATIVA').sum().reset_index()
+
+dash.register_page(__name__, name='Estado')
+
+layout = html.Div([
+    
+    
+     html.Div([
+        html.H1('ANUIES DASH'),
+        html.Img(src='assets/estados.png')
+    ], className='banner'),
+     
+     # Añade un componente Dropdown para seleccionar el año
+html.Div([
+    dcc.Dropdown(
+        id='select-year',
+        options=[
+            {'label': str(year), 'value': year}
+            for year in range(2012, 2024)  # Cambia el rango de años según tus necesidades
+        ],
+        value=2023  # Año inicial seleccionado
+    )
+], className='create_container2 nine columns', style={'margin-bottom': '10px'}),
+     
+     html.Div([
+        html.Div([
+            html.P('Selecciona el indicador', className='fix_label', style={'color':'black', 'margin-top': '2px'}),
+            dcc.RadioItems(id='dosis-radioitems', 
+                           labelStyle={
+                               'display': 'inline-block',
+                               'margin-right': '6px',
+                               'font-weight': 300
+                           },
+                           options=[
+                               {'label': 'Lugares Ofertados', 'value': 'Lugares_Ofertados'},
+                               {'label': 'Solicitudes de Primer ingreso', 'value': 'Solicitudes_de_Primer_Ingreso'},
+                               {'label': 'Primer Ingreso', 'value': 'Primer_Ingreso_Total'},
+                               {'label': 'Matriculados', 'value': 'Matrícula_Total'},
+                               {'label': 'Egresados', 'value': 'Egresados_Total'},
+                               {'label': 'Titulados', 'value': 'Titulados_Total'},
+                           ],
+                           value='Lugares_Ofertados',
+                           style={'text-aling':'center', 'align-items': 'center', 'justify-content': 'center','color':'black'},
+                           className='dcc_compon'
+            ),
+        ], className='create_container2 nine columns', style={'margin-bottom': '10px'}),
+    ], className='row flex-display'),
+     
+    html.Div([
+        html.Div([
+            dcc.Graph(id='my_graph', figure={})
+        ], className='create_container2 eleven columns'),
+
+        html.Div([
+            dcc.Graph(id='pie_graph', figure={})
+        ], className='create_container2 eleven columns'),
+      
+    ], className='row flex-display'),
+      
+    html.Div([
+        html.Div([
+            dcc.Graph(id='scatter_graph', figure={})
+        ], className='create_container2 eleven columns')
+    ]),
+      
+    html.Div([
+        html.Div([
+            dcc.Graph(id='lin_graph', figure={})
+        ], className='create_container2 eleven columns')
+    ])
+], id='mainContainer', style={'display':'flex', 'flex-direction':'column'})
+
+#-------------------------------------------------------------------
+# ..
+@callback(
+    [Output('my_graph', 'figure'),
+     Output('pie_graph', 'figure'),
+     Output('scatter_graph', 'figure'),
+     Output('lin_graph', 'figure')],
+    [Input('dosis-radioitems', 'value'),
+     Input('select-year', 'value')]
+)
+def update_graph(value, selected_year):
+    filtered_df = df[df['Año'] == selected_year]
+
+    title_text = 'Gráfico de Barras'
+
+    if value == 'Lugares_Ofertados':
+        fig = px.bar(filtered_df, y="Lugares_Ofertados", x="ENTIDAD_FEDERATIVA",
+             color="ENTIDAD_FEDERATIVA", text="Lugares_Ofertados")
+        title_text = 'Gráfico de Barras - Lugares Ofertados'
+    elif value == 'Solicitudes_de_Primer_Ingreso':
+        fig = px.bar(filtered_df, y="Solicitudes_de_Primer_Ingreso", x="ENTIDAD_FEDERATIVA",
+             color="ENTIDAD_FEDERATIVA", text="Solicitudes_de_Primer_Ingreso", color_discrete_sequence=[
+                 px.colors.qualitative.Alphabet[6],
+                 px.colors.qualitative.Alphabet[11],
+                 px.colors.qualitative.Plotly[2],
+                 px.colors.qualitative.Plotly[7],
+                 px.colors.qualitative.G10[5],
+                 px.colors.qualitative.Alphabet[12],
+                 px.colors.qualitative.Alphabet[13],
+                 px.colors.qualitative.Safe[5],
+                 px.colors.qualitative.Safe[6],
+                 px.colors.qualitative.Safe[9],
+                 ])
+        title_text = 'Gráfico de Barras - Solicitudes de Primer Ingreso'
+    elif value == 'Primer_Ingreso_Total':
+        fig = px.bar(filtered_df, x="ENTIDAD_FEDERATIVA", y='Primer_Ingreso_Total',
+            color="ENTIDAD_FEDERATIVA", text="Primer_Ingreso_Total")
+        title_text = 'Gráfico de Barras - Primer Ingreso Total'
+    elif value == 'Matrícula_Total':
+        fig = px.bar(filtered_df, x="ENTIDAD_FEDERATIVA", y='Matrícula_Total',
+            color="ENTIDAD_FEDERATIVA", text="Matrícula_Total")
+        title_text = 'Gráfico de Barras - Matrícula Total'
+    elif value == 'Egresados_Total':
+        fig = px.bar(filtered_df, x="ENTIDAD_FEDERATIVA", y='Egresados_Total',
+            color="ENTIDAD_FEDERATIVA", text="Egresados_Total")
+        title_text = 'Gráfico de Barras - Egresados Total'
+    else:
+        fig = px.bar(filtered_df, x="ENTIDAD_FEDERATIVA", y='Titulados_Total',
+            color="ENTIDAD_FEDERATIVA", text="Titulados_Total")
+        title_text = 'Gráfico de Barras - Titulados Total'
+    
+    fig.update_layout(
+        font_family="verdana",
+        font_color="blue",
+        title_font_family="Arial Black",
+        title_font_color="red",
+        legend_title_font_color="green",
+        font=dict(
+            family="verdana",
+            size=10,
+            color="RebeccaPurple"
+        )
+    )
+    fig.update_traces(textfont_size=8, textangle=0, textposition="inside", cliponaxis=False)
+    fig.update_xaxes(title_font_family="Arial")
+    fig.update_layout(title={'text': title_text})
+
+    # Gráfico de pastel (pie chart)
+    fig2 = px.pie(
+        data_frame=filtered_df,
+        names='ENTIDAD_FEDERATIVA',
+        values='Lugares_Ofertados',
+        title='Gráfico circular (Pie chart)',
+        hover_data=['Lugares_Ofertados'],
+        labels='ENTIDAD_FEDERATIVA'
+    )
+    fig2.update_layout(title={'text': 'Gráfico Circular - Lugares Ofertados', 'x': 0.5}, uniformtext_minsize=12, uniformtext_mode='hide')
+
+    # Gráfico de dispersión (scatter plot)
+    fig3 = px.scatter(
+        data_frame=filtered_df,
+        y='Lugares_Ofertados',
+        title='Diagrama de Dispersión - Lugares Ofertados'
+    )
+    fig3.update_xaxes(showline=False, showgrid=False, zeroline=False, title='')
+
+    # Gráfico de líneas (line chart)
+    fig4 = px.line(filtered_df, y='Lugares_Ofertados', title='Gráfico de Líneas - Lugares Ofertados')
+
+    return fig, fig2, fig3, fig4
+
+#-----------------------Version
+Final
+import dash
+from dash import dcc, html
+import pandas as pd 
+from dash.dependencies import Input, Output
+from dash import html, dcc, callback, Input, Output
+import dash_bootstrap_components as dbc
+import plotly.express as px
+
+df = pd.read_excel('Data.xlsx')
+
+df2 = df.groupby('ENTIDAD_FEDERATIVA').sum()
+df3 = df.groupby('ENTIDAD_FEDERATIVA').sum().reset_index()
+
+dash.register_page(__name__, name='Estado')
+
+layout = html.Div([
+    
+    
+     html.Div([
+        html.H1('ANUIES DASH'),
+        html.Img(src='assets/estados.png')
+    ], className='banner'),
+     
+     # Añade un componente Dropdown para seleccionar el año
+html.Div([
+    dcc.Dropdown(
+        id='select-year',
+        options=[
+            {'label': str(year), 'value': year}
+            for year in range(2012, 2024)  # Cambia el rango de años según tus necesidades
+        ],
+        value=2023  # Año inicial seleccionado
+    )
+], className='create_container2 nine columns', style={'margin-bottom': '10px'}),
+     
+     html.Div([
+        html.Div([
+            html.P('Selecciona el indicador', className='fix_label', style={'color':'black', 'margin-top': '2px'}),
+            dcc.RadioItems(id='dosis-radioitems', 
+                           labelStyle={
+                               'display': 'inline-block',
+                               'margin-right': '6px',
+                               'font-weight': 300
+                           },
+                           options=[
+                               {'label': 'Lugares Ofertados', 'value': 'Lugares_Ofertados'},
+                               {'label': 'Solicitudes de Primer ingreso', 'value': 'Solicitudes_de_Primer_Ingreso'},
+                               {'label': 'Primer Ingreso', 'value': 'Primer_Ingreso_Total'},
+                               {'label': 'Matriculados', 'value': 'Matrícula_Total'},
+                               {'label': 'Egresados', 'value': 'Egresados_Total'},
+                               {'label': 'Titulados', 'value': 'Titulados_Total'},
+                           ],
+                           value='Lugares_Ofertados',
+                           style={'text-aling':'center', 'align-items': 'center', 'justify-content': 'center','color':'black'},
+                           className='dcc_compon'
+            ),
+        ], className='create_container2 nine columns', style={'margin-bottom': '10px'}),
+    ], className='row flex-display'),
+     
+    html.Div([
+        html.Div([
+            dcc.Graph(id='my_graph', figure={})
+        ], className='create_container2 eleven columns'),
+
+        html.Div([
+            dcc.Graph(id='pie_graph', figure={})
+        ], className='create_container2 eleven columns'),
+      
+    ], className='row flex-display'),
+      
+    html.Div([
+        html.Div([
+            dcc.Graph(id='scatter_graph', figure={})
+        ], className='create_container2 eleven columns')
+    ]),
+      
+    html.Div([
+        html.Div([
+            dcc.Graph(id='lin_graph', figure={})
+        ], className='create_container2 eleven columns')
+    ])
+], id='mainContainer', style={'display':'flex', 'flex-direction':'column'})
+
+#-------------------------------------------------------------------
+# ..
+@callback(
+    [Output('my_graph', 'figure'),
+     Output('pie_graph', 'figure'),
+     Output('scatter_graph', 'figure'),
+     Output('lin_graph', 'figure')],
+    [Input('dosis-radioitems', 'value'),
+     Input('select-year', 'value')]
+)
+def update_graph(value, selected_year):
+    filtered_df = df[df['Año'] == selected_year]
+
+    title_text = 'Gráfico de Barras'
+
+    if value == 'Lugares_Ofertados':
+        fig = px.bar(filtered_df, y="Lugares_Ofertados", x="ENTIDAD_FEDERATIVA",
+             color="ENTIDAD_FEDERATIVA", text="Lugares_Ofertados")
+        title_text = 'Gráfico de Barras - Lugares Ofertados'
+    elif value == 'Solicitudes_de_Primer_Ingreso':
+        fig = px.bar(filtered_df, y="Solicitudes_de_Primer_Ingreso", x="ENTIDAD_FEDERATIVA",
+             color="ENTIDAD_FEDERATIVA", text="Solicitudes_de_Primer_Ingreso", color_discrete_sequence=[
+                 px.colors.qualitative.Alphabet[6],
+                 px.colors.qualitative.Alphabet[11],
+                 px.colors.qualitative.Plotly[2],
+                 px.colors.qualitative.Plotly[7],
+                 px.colors.qualitative.G10[5],
+                 px.colors.qualitative.Alphabet[12],
+                 px.colors.qualitative.Alphabet[13],
+                 px.colors.qualitative.Safe[5],
+                 px.colors.qualitative.Safe[6],
+                 px.colors.qualitative.Safe[9],
+                 ])
+        title_text = 'Gráfico de Barras - Solicitudes de Primer Ingreso'
+    elif value == 'Primer_Ingreso_Total':
+        fig = px.bar(filtered_df, x="ENTIDAD_FEDERATIVA", y='Primer_Ingreso_Total',
+            color="ENTIDAD_FEDERATIVA", text="Primer_Ingreso_Total")
+        title_text = 'Gráfico de Barras - Primer Ingreso Total'
+    elif value == 'Matrícula_Total':
+        fig = px.bar(filtered_df, x="ENTIDAD_FEDERATIVA", y='Matrícula_Total',
+            color="ENTIDAD_FEDERATIVA", text="Matrícula_Total")
+        title_text = 'Gráfico de Barras - Matrícula Total'
+    elif value == 'Egresados_Total':
+        fig = px.bar(filtered_df, x="ENTIDAD_FEDERATIVA", y='Egresados_Total',
+            color="ENTIDAD_FEDERATIVA", text="Egresados_Total")
+        title_text = 'Gráfico de Barras - Egresados Total'
+    else:
+        fig = px.bar(filtered_df, x="ENTIDAD_FEDERATIVA", y='Titulados_Total',
+            color="ENTIDAD_FEDERATIVA", text="Titulados_Total")
+        title_text = 'Gráfico de Barras - Titulados Total'
+    
+    fig.update_layout(
+        font_family="verdana",
+        font_color="blue",
+        title_font_family="Arial Black",
+        title_font_color="red",
+        legend_title_font_color="green",
+        font=dict(
+            family="verdana",
+            size=10,
+            color="RebeccaPurple"
+        )
+    )
+    fig.update_traces(textfont_size=8, textangle=0, textposition="inside", cliponaxis=False)
+    fig.update_xaxes(title_font_family="Arial")
+    fig.update_layout(title={'text': title_text})
+
+    # Gráfico de pastel (pie chart)
+    fig2 = px.pie(
+        data_frame=filtered_df,
+        names='ENTIDAD_FEDERATIVA',
+        values='Lugares_Ofertados',
+        title='Gráfico circular (Pie chart)',
+        hover_data=['Lugares_Ofertados'],
+        labels='ENTIDAD_FEDERATIVA'
+    )
+    fig2.update_layout(title={'text': 'Gráfico Circular - Lugares Ofertados', 'x': 0.5}, uniformtext_minsize=12, uniformtext_mode='hide')
+
+    # Gráfico de dispersión (scatter plot)
+    fig3 = px.scatter(
+        data_frame=filtered_df,
+        y='Lugares_Ofertados',
+        title='Diagrama de Dispersión - Lugares Ofertados'
+    )
+    fig3.update_xaxes(showline=False, showgrid=False, zeroline=False, title='')
+
+    # Gráfico de líneas (line chart)
+    fig4 = px.line(filtered_df, y='Lugares_Ofertados', title='Gráfico de Líneas - Lugares Ofertados')
+
+    return fig, fig2, fig3, fig4
+
