@@ -26,7 +26,9 @@ layout = html.Div([
             {'label': 'Carrera_Areas', 'value': 'Carrera_Areas'}
         ],
         value='Clasificación',  # Valor predeterminado
-        style={'width': '50%'}
+        style={'width': '50%'},
+        className="custom-dropdown"
+
     ),
     
 
@@ -41,7 +43,10 @@ layout = html.Div([
         id='year-selector',
         options=[{'label': año, 'value': año} for año in años_disponibles],
         value=años_disponibles[0],  # Valor predeterminado
-        style={'width': '50%'}
+        style={'width': '50%'},
+                className="custom-dropdown"
+
+
     ),
 
     # Gráfico de barras

@@ -92,3 +92,45 @@ display: block;
   display: flex;
   flex-direction: column;
 }
+.custom-dropdown {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #378DFC; /* Cambiamos el color del borde a #378DFC */
+  border-radius: 5px;
+  background-color: #378DFC;
+  color: #333;
+  font-size: 16px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.custom-dropdown:hover {
+  border-color: #0056b3; /* Cambiamos el color del borde al pasar el cursor */
+}
+
+.custom-dropdown:focus {
+  border-color: #0056b3; /* Cambiamos el color del borde cuando se enfoca */
+  box-shadow: 0 0 8px rgba(55, 141, 252, 0.5); /* Cambiamos el color de la sombra */
+  outline: none;
+}
+
+.custom-dropdown::placeholder {
+  color: #801e1e;
+}
+
+.custom-dropdown option {
+  background-color: #c00b0b;
+  color: #333;
+}
+
+.custom-dropdown::-ms-expand {
+  display: none;
+}
+
+.custom-dropdown-arrow {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
