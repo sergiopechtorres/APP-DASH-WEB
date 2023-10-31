@@ -97,7 +97,4 @@ app.layout = dbc.Container([
 
 if __name__ == "__main__":
     app.run(debug=True)
-<<<<<<< HEAD
 
-=======
->>>>>>> 5dc2b4169575c4058357d7f3718abbd41e037a2c
